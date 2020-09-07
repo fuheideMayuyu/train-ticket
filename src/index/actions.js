@@ -74,6 +74,7 @@ export function setSelectedCity(city){
     } else {
       dispatch(setTo(city))
     }
+    dispatch(hideCitySelector())
   }
 }
 
@@ -96,6 +97,43 @@ export function exchangeFromTo(){
     const {from, to } = getState()
     dispatch(setFrom(to))
     dispatch(setTo(from))
+  }
+}
+export function setDepartDate(departDate) {
+  return {
+    type: ACTION_SET_DEPART_DATE,
+    payload: departDate,
+  };
+}
+export function fetchCityData(){
+  return (dispatch, getSate) => {
+    const { isLoadingCityData } = getSate()
+    if(isLoadingCityData) {
+      return 
+    }
+    const cache = JSON.parse(localStorage.getItem('city_data_cache') || "{}")
+    if(Date.now() < cache.expires) {
+      dispatch(setCityData(cache.data))
+      return
+    }
+    dispatch(setIsLoadingCityData(true))
+
+    fetch('/rest/cities?' + Date.now())
+      .then(res => res.json())
+      .then(cityData => {
+        dispatch(setCityData(cityData))
+        localStorage.setItem(
+          'city_data_cache',
+          JSON.stringify({
+            expires: Date.now() + 60*1000,
+            data: cityData
+          })
+        )
+        dispatch(setIsLoadingCityData(false))
+      })
+      .catch(err => {
+        dispatch(setIsLoadingCityData(false))
+      })
   }
 }
 
